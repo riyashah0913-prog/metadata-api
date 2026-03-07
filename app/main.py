@@ -32,9 +32,6 @@ def homepage():
                     font-size: 36px;
                     margin-bottom: 10px;
                 }
-                p {
-                    font-size: 16px;
-                }
                 code, pre {
                     background: #f4f4f4;
                     border-radius: 6px;
@@ -63,6 +60,7 @@ def homepage():
             </style>
         </head>
         <body>
+
             <h1>Website Metadata API</h1>
 
             <p>
@@ -81,7 +79,8 @@ def homepage():
 
             <div class="box">
                 <strong>Batch request</strong>
-                <pre>POST /batch-metadata
+                <pre>
+POST /batch-metadata
 
 {
   "urls": [
@@ -89,7 +88,8 @@ def homepage():
     "https://wikipedia.org",
     "https://example.com"
   ]
-}</pre>
+}
+                </pre>
             </div>
 
             <div class="box">
@@ -110,9 +110,25 @@ def homepage():
 }</pre>
             </div>
 
+            <div class="box">
+                <strong>Project Links</strong>
+                <pre>
+API:
+https://metadata-api-gae5.onrender.com
+
+Docs:
+https://metadata-api-gae5.onrender.com/docs
+
+GitHub:
+https://github.com/riyashah0913-prog/metadata-api
+                </pre>
+            </div>
+
             <p>
-                Test the API here: <a href="/docs">API Documentation</a>
+                Test the API here:
+                <a href="/docs">API Documentation</a>
             </p>
+
         </body>
     </html>
     """
