@@ -12,6 +12,9 @@ class MetadataResponse(BaseModel):
     domain: Optional[str] = None
     url: str
     error: Optional[str] = None
+    og_title: Optional[str] = None
+    twitter_title: Optional[str] = None
+    og_type: Optional[str] = None
 
 
 class BatchMetadataRequest(BaseModel):
