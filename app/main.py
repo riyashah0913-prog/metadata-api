@@ -66,12 +66,17 @@ def homepage():
             <h1>Website Metadata API</h1>
 
             <p>
-                Extract titles, descriptions, preview images, and favicons from any website.
+                Extract titles, descriptions, preview images, favicons, and social metadata from any website.
             </p>
 
             <div class="box">
                 <strong>Single URL request</strong>
                 <pre>GET /metadata?url=https://example.com</pre>
+            </div>
+
+            <div class="box">
+                <strong>Preview request</strong>
+                <pre>GET /preview?url=https://example.com</pre>
             </div>
 
             <div class="box">
@@ -98,7 +103,10 @@ def homepage():
   "site_name": null,
   "domain": "example.com",
   "url": "https://example.com",
-  "error": null
+  "error": null,
+  "og_title": null,
+  "twitter_title": null,
+  "og_type": null
 }</pre>
             </div>
 
@@ -135,6 +143,26 @@ def get_metadata(url: str = Query(..., description="The URL to extract metadata 
         raise HTTPException(status_code=400, detail="Could not fetch metadata")
 
 
+@app.get("/preview")
+def preview(url: str = Query(..., description="The URL to generate a clean preview from")):
+    validate_url(url)
+
+    try:
+        data = extract_metadata(url)
+        data = add_domain_field(data)
+
+        return {
+            "title": data.get("og_title") or data.get("twitter_title") or data.get("title"),
+            "description": data.get("description"),
+            "image": data.get("image"),
+            "url": data.get("url"),
+            "site": data.get("site_name"),
+            "domain": data.get("domain"),
+        }
+    except Exception:
+        raise HTTPException(status_code=400, detail="Could not generate preview")
+
+
 @app.post("/batch-metadata", response_model=BatchMetadataResponse)
 def get_batch_metadata(request: BatchMetadataRequest):
     if not request.urls:
@@ -156,7 +184,10 @@ def get_batch_metadata(request: BatchMetadataRequest):
                 "site_name": None,
                 "domain": None,
                 "url": url,
-                "error": "URL must start with http or https"
+                "error": "URL must start with http or https",
+                "og_title": None,
+                "twitter_title": None,
+                "og_type": None
             })
             continue
 
@@ -176,7 +207,10 @@ def get_batch_metadata(request: BatchMetadataRequest):
                 "site_name": None,
                 "domain": None,
                 "url": url,
-                "error": "Could not fetch metadata"
+                "error": "Could not fetch metadata",
+                "og_title": None,
+                "twitter_title": None,
+                "og_type": None
             })
 
     return {"results": results}
