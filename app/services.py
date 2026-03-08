@@ -55,6 +55,15 @@ def extract_metadata(target_url: str):
     twitter_title = get_meta_content(soup, "name", "twitter:title")
     og_type = get_meta_content(soup, "property", "og:type")
 
+    domain = target_url.split("//")[-1].split("/")[0]
+
+    preview = {
+        "title": og_title or twitter_title or title,
+        "description": description,
+        "image": image,
+        "domain": domain
+    }
+
     result = {
         "title": title,
         "description": description,
@@ -64,7 +73,8 @@ def extract_metadata(target_url: str):
         "url": target_url,
         "og_title": og_title,
         "twitter_title": twitter_title,
-        "og_type": og_type
+        "og_type": og_type,
+        "preview": preview
     }
 
     CACHE[target_url] = result
