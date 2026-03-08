@@ -9,6 +9,7 @@ from .models import (
     MetadataResponse,
 )
 from .services import extract_metadata
+from .utils import normalize_url
 
 app = FastAPI(title="Metadata API")
 
@@ -69,12 +70,12 @@ def homepage():
 
             <div class="box">
                 <strong>Single URL request</strong>
-                <pre>GET /metadata?url=https://example.com</pre>
+                <pre>GET /metadata?url=github.com</pre>
             </div>
 
             <div class="box">
                 <strong>Preview request</strong>
-                <pre>GET /preview?url=https://example.com</pre>
+                <pre>GET /preview?url=github.com</pre>
             </div>
 
             <div class="box">
@@ -84,30 +85,12 @@ POST /batch-metadata
 
 {
   "urls": [
-    "https://github.com",
-    "https://wikipedia.org",
-    "https://example.com"
+    "github.com",
+    "wikipedia.org",
+    "example.com"
   ]
 }
                 </pre>
-            </div>
-
-            <div class="box">
-                <strong>Example response</strong>
-                <pre>{
-  "status": "success",
-  "title": "Example Domain",
-  "description": null,
-  "image": null,
-  "favicon": "https://example.com/favicon.ico",
-  "site_name": null,
-  "domain": "example.com",
-  "url": "https://example.com",
-  "error": null,
-  "og_title": null,
-  "twitter_title": null,
-  "og_type": null
-}</pre>
             </div>
 
             <div class="box">
@@ -134,9 +117,14 @@ https://github.com/riyashah0913-prog/metadata-api
     """
 
 
-def validate_url(url: str):
-    if not url.startswith("http"):
-        raise HTTPException(status_code=400, detail="URL must start with http or https")
+def validate_url(url: str) -> str:
+    normalized = normalize_url(url)
+    parsed = urlparse(normalized)
+
+    if not parsed.scheme or not parsed.netloc:
+        raise HTTPException(status_code=400, detail="Invalid URL")
+
+    return normalized
 
 
 def add_domain_field(metadata: dict) -> dict:
@@ -147,10 +135,10 @@ def add_domain_field(metadata: dict) -> dict:
 
 @app.get("/metadata", response_model=MetadataResponse)
 def get_metadata(url: str = Query(..., description="The URL to extract metadata from")):
-    validate_url(url)
+    normalized_url = validate_url(url)
 
     try:
-        metadata = extract_metadata(url)
+        metadata = extract_metadata(normalized_url)
         metadata = add_domain_field(metadata)
         metadata["status"] = "success"
         metadata["error"] = None
@@ -161,10 +149,10 @@ def get_metadata(url: str = Query(..., description="The URL to extract metadata 
 
 @app.get("/preview")
 def preview(url: str = Query(..., description="The URL to generate a clean preview from")):
-    validate_url(url)
+    normalized_url = validate_url(url)
 
     try:
-        data = extract_metadata(url)
+        data = extract_metadata(normalized_url)
         data = add_domain_field(data)
 
         return {
@@ -190,7 +178,9 @@ def get_batch_metadata(request: BatchMetadataRequest):
     results = []
 
     for url in request.urls:
-        if not url.startswith("http"):
+        try:
+            normalized_url = validate_url(url)
+        except HTTPException:
             results.append({
                 "status": "error",
                 "title": None,
@@ -200,15 +190,16 @@ def get_batch_metadata(request: BatchMetadataRequest):
                 "site_name": None,
                 "domain": None,
                 "url": url,
-                "error": "URL must start with http or https",
+                "error": "Invalid URL",
                 "og_title": None,
                 "twitter_title": None,
-                "og_type": None
+                "og_type": None,
+                "preview": None
             })
             continue
 
         try:
-            metadata = extract_metadata(url)
+            metadata = extract_metadata(normalized_url)
             metadata = add_domain_field(metadata)
             metadata["status"] = "success"
             metadata["error"] = None
@@ -222,11 +213,12 @@ def get_batch_metadata(request: BatchMetadataRequest):
                 "favicon": None,
                 "site_name": None,
                 "domain": None,
-                "url": url,
+                "url": normalized_url,
                 "error": "Could not fetch metadata",
                 "og_title": None,
                 "twitter_title": None,
-                "og_type": None
+                "og_type": None,
+                "preview": None
             })
 
     return {"results": results}
