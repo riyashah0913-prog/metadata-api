@@ -1,6 +1,6 @@
 import requests
 from bs4 import BeautifulSoup
-from .utils import make_absolute
+from .utils import make_absolute, normalize_url
 
 CACHE = {}
 
@@ -13,6 +13,8 @@ def get_meta_content(soup, attr_name, attr_value):
 
 
 def extract_metadata(target_url: str):
+    target_url = normalize_url(target_url)
+
     if target_url in CACHE:
         return CACHE[target_url]
 
